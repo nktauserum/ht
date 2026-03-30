@@ -7,7 +7,8 @@
 #define HT_CAPACITY 4096
 
 typedef struct {
-    int value;
+    char* key;
+    uint64_t value;
     bool occupied;
 } item;
 
@@ -34,12 +35,26 @@ uint32_t djb2(const char *key) {
     return hash;
 }
 
-void ht_insert(ht* t, const char *key, int value) {
+void ht_insert(ht* t, char *key, uint64_t value) {
     uint32_t pos = djb2(key)% t->capacity;
 
     printf("pos: %s => %d\n", key, pos);
+
     t->bucket[pos].value = value;
+    t->bucket[pos].occupied = true;
+    t->bucket[pos].key = key;
+
     ++t->size;
+}
+
+int ht_derive(ht* t, const char* key) {
+    uint32_t pos = djb2(key)% t->capacity;
+
+    // there is currently no collision handle
+    if (strcmp(t->bucket[pos].key, key) < 0) 
+        return -1;
+        
+    return t->bucket[pos].value;
 }
 
 int main(void) {
@@ -47,6 +62,7 @@ int main(void) {
     ht_init(&table);
 
     ht_insert(&table, "test", 196);
+    printf("%s => %d\n", "test", ht_derive(&table, "test"));
 
     return 0;
 }
