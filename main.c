@@ -19,6 +19,7 @@ typedef struct {
 
 void ht_init(ht* t) {
     t->bucket = malloc(HT_CAPACITY * sizeof(item));
+    memset(t->bucket, 0, HT_CAPACITY * sizeof(*t->bucket));
     t->capacity = HT_CAPACITY;
     t->size = 0;
 }
