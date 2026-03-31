@@ -17,5 +17,5 @@ typedef struct {
 } ht;
 
 void ht_insert(ht*, char*, uint64_t);
-int ht_derive(ht*, const char*);
+item* ht_derive(ht*, const char*);
 void ht_init(ht*);

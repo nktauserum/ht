@@ -7,7 +7,7 @@ int main(void) {
     ht_init(&table);
 
     ht_insert(&table, "test", 196);
-    printf("%s => %d\n", "test", ht_derive(&table, "test"));
+    printf("%s => %ld\n", "test", ht_derive(&table, "test")->value);
 
     return 0;
 }

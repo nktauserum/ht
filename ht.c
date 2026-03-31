@@ -37,12 +37,12 @@ void ht_insert(ht* t, char *key, uint64_t value) {
     ++t->size;
 }
 
-int ht_derive(ht* t, const char* key) {
+item* ht_derive(ht* t, const char* key) {
     uint32_t pos = djb2(key)% t->capacity;
 
     // there is currently no collision handle
     if (strcmp(t->bucket[pos].key, key) < 0) 
-        return -1;
+        return NULL;
         
-    return t->bucket[pos].value;
+    return &t->bucket[pos];
 }
