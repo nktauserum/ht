@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
 #include "ht.h"
+#include "request.h"
 
 #define PORT 5000
 #define QUEUE_SIZE 2048
@@ -35,8 +35,19 @@ typedef struct {
     pthread_cond_t cond;
 } incoming_connections_buf;
 
+void handle(int *clientfd, request_buffer* b) {
+    if ((request_read(clientfd, b)) < 0) {
+        perror("request_read");
+        return;
+    }
+
+    printf("payload: %s\n", b->buf);
+}
+
 void* worker(void* arg) {
     incoming_connections_buf* buf = arg;
+    char* rb_buf = malloc(REQUEST_BUFFER_SIZE * sizeof(char));
+    request_buffer rb = {.buf = rb_buf, .buf_size = 0, .total_read = 0};
 
     while (1) {
         pthread_mutex_lock(&buf->mu);
@@ -46,11 +57,14 @@ void* worker(void* arg) {
         buf->tail = (buf->tail + 1) % QUEUE_SIZE;
         --buf->size;
 
-        printf("handling a request...\n");
+        handle(clientfd, &rb);
 
         close(*clientfd);
         free(clientfd);
     }
+
+    // actually unnecessary
+    free(rb_buf);
 }
 
 int main(void) {

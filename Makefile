@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -pedantic -I./src -g
-SRC = main.c ht.c
+SRC = main.c ht.c request.c
 OBJ = $(SRC:.c=.o)
 TARGET = ht
 
