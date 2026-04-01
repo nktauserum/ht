@@ -48,6 +48,47 @@ int request_read(int *clientfd, request_buffer* b) {
     return 0;
 }
 
-void request_parse(request_buffer* buf, request* r) {
+int request_parse(request_buffer* buf, request* r) {
+    const char *p = buf->buf;
+    const char *end = buf->buf + buf->total_read;
+    int state = s_start;
 
+    while (p < end) {
+        const char *c = p++;
+
+        switch (state) {
+        case s_start:
+            state = s_method;
+            r->method = c;
+            break;
+
+        case s_method:
+            if (*c == ' ') {
+                state = s_path;
+                r->field_name = c+1;
+                r->method_len = c - r->method;
+            }
+            break;
+            
+        case s_path:
+            if (*c == ' ') {
+                state = s_protocol;
+                r->protocol = c+1;
+                r->field_name_len = c - r->field_name;
+            }
+            break;
+        
+        case s_protocol:
+            if (*c == '\r') {
+                state = s_done;
+                r->protocol_len = c - r->protocol;
+            }
+            break;
+        
+        case s_done:
+            break;
+        }
+    }
+
+    return 0;
 }

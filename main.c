@@ -41,7 +41,21 @@ void handle(int *clientfd, request_buffer* b) {
         return;
     }
 
-    printf("payload: %s\n", b->buf);
+    request r = {0};
+    if ((request_parse(b, &r)) < 0) {
+        perror("request_parse");
+        return;
+    }
+
+    // debug
+    printf(
+        "method: %.*s\n"
+        "field: %.*s\n"
+        "protocol: %.*s\n",
+        (int)r.method_len, r.method,
+        (int)r.field_name_len, r.field_name,
+        (int)r.protocol_len, r.protocol
+    );
 }
 
 void* worker(void* arg) {

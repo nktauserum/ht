@@ -5,16 +5,26 @@
 #define GET '0'
 #define SET '1'
 
-/*
-    1 (SET) name_of_field
-
-    {"data": "hello world"}
-*/
+enum {
+    s_start,
+    s_path,
+    s_method,
+    s_protocol,
+    s_done
+};
 
 typedef struct {
-    char method;
-    char *field_name;   size_t field_name_len;
-    char *payload;      size_t payload_len;
+    char* key;              size_t key_len;
+    char* value;            size_t value_len;
+} header;
+
+typedef struct {
+    char *method;           size_t method_len;
+    char *field_name;       size_t field_name_len;
+    char *protocol;     size_t protocol_len;
+
+    char *payload;          size_t payload_len;
+    header headers[64];     size_t headers_count;
 } request;
 
 typedef struct {
@@ -25,4 +35,4 @@ typedef struct {
 
 
 int request_read(int*, request_buffer*);
-void request_parse(request_buffer*, request*);
+int request_parse(request_buffer*, request*);
