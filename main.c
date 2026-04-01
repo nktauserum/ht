@@ -47,7 +47,7 @@ void handle(int *clientfd, request_buffer* b) {
 void* worker(void* arg) {
     incoming_connections_buf* buf = arg;
     char* rb_buf = malloc(REQUEST_BUFFER_SIZE * sizeof(char));
-    request_buffer rb = {.buf = rb_buf, .buf_size = 0, .total_read = 0};
+    request_buffer rb = {.buf = rb_buf, .buf_size = REQUEST_BUFFER_SIZE, .total_read = 0};
 
     while (1) {
         pthread_mutex_lock(&buf->mu);
@@ -56,11 +56,13 @@ void* worker(void* arg) {
         int* clientfd = buf->queue[buf->tail];
         buf->tail = (buf->tail + 1) % QUEUE_SIZE;
         --buf->size;
+        pthread_mutex_unlock(&buf->mu);
 
         handle(clientfd, &rb);
 
         close(*clientfd);
         free(clientfd);
+        rb.total_read = 0;
     }
 
     // actually unnecessary

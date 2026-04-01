@@ -1,2 +1,4 @@
 ht
 *.o
+.github
+.vscode

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -I./src -g
+CFLAGS = -Wall -Wextra -pedantic -lpthread -g 
 SRC = main.c ht.c request.c
 OBJ = $(SRC:.c=.o)
 TARGET = ht
