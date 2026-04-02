@@ -10,6 +10,8 @@ enum {
     s_path,
     s_method,
     s_protocol,
+    s_header_key,
+    s_header_value,
     s_done
 };
 

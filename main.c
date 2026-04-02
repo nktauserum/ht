@@ -149,8 +149,7 @@ int main(void) {
                     if (!clientfd) break;
 
                     if ((*clientfd = accept(server.server_fd, NULL, NULL)) < 0) {
-                        if (errno == EAGAIN) break;
-                        perror("accept failed");
+                        if (errno != EAGAIN) perror("accept failed");
                         free(clientfd);
                         break;
                     }

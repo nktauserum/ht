@@ -52,6 +52,8 @@ int request_parse(request_buffer* buf, request* r) {
     const char *p = buf->buf;
     const char *end = buf->buf + buf->total_read;
     int state = s_start;
+    int curr_header = 0;
+    char* start = NULL;
 
     while (p < end) {
         const char *c = p++;
@@ -80,9 +82,48 @@ int request_parse(request_buffer* buf, request* r) {
         
         case s_protocol:
             if (*c == '\r') {
-                state = s_done;
+                state = s_header_key;
                 r->protocol_len = c - r->protocol;
+
+                // обрабатываем \n
+                start = ++c;
             }
+            break;
+
+        case s_header_key:
+            if (*c == ' ' || *c == '\n') {
+                start = ++c;
+                continue;
+            }
+
+            if (*c == '\r') {
+                printf("key is \\r, done.\n");
+                state = s_done;
+                continue;
+            }
+
+            if (*c == ':') {
+                state = s_header_value;
+                r->headers[curr_header].key = start;
+                r->headers[curr_header].key_len = c - start;
+                start = ++c;
+            }
+
+            break;
+
+        case s_header_value:
+            if (*c == ' ' || *c == '\n') {
+                start = ++c;
+                continue;
+            }
+
+            if (*c == '\r') {
+                state = s_header_key;
+                r->headers[curr_header].value = start;
+                r->headers[curr_header].value_len = c - start;
+                start = ++c;
+            }
+
             break;
         
         case s_done:
