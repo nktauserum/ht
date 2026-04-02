@@ -7,7 +7,7 @@
 
 #include "request.h"
 
-int request_read(int *clientfd, request_buffer* b) {
+int request_read(int *clientfd, request_buffer* b, request* r) {
     while (1) {
         if (b->total_read >= b->buf_size - 1) {
             perror("buffer is full");
@@ -45,12 +45,8 @@ int request_read(int *clientfd, request_buffer* b) {
         }
     }
 
-    return 0;
-}
-
-int request_parse(request_buffer* buf, request* r) {
-    const char *p = buf->buf;
-    const char *end = buf->buf + buf->total_read;
+    const char *p = b->buf;
+    const char *end = b->buf + b->total_read;
     int state = s_start;
     int curr_header = 0;
     char* start = NULL;

@@ -36,14 +36,9 @@ typedef struct {
 } incoming_connections_buf;
 
 void handle(int *clientfd, request_buffer* b) {
-    if ((request_read(clientfd, b)) < 0) {
-        perror("request_read");
-        return;
-    }
-
     request r = {0};
-    if ((request_parse(b, &r)) < 0) {
-        perror("request_parse");
+    if ((request_read(clientfd, b, &r)) < 0) {
+        perror("request_read");
         return;
     }
 
