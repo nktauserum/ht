@@ -97,8 +97,9 @@ int request_parse(request_buffer* buf, request* r) {
             }
 
             if (*c == '\r') {
-                printf("key is \\r, done.\n");
                 state = s_done;
+                r->headers_count = curr_header++; 
+                printf("%d\n", (int)r->headers_count);
                 continue;
             }
 
@@ -122,6 +123,7 @@ int request_parse(request_buffer* buf, request* r) {
                 r->headers[curr_header].value = start;
                 r->headers[curr_header].value_len = c - start;
                 start = ++c;
+                ++curr_header;
             }
 
             break;
