@@ -3,6 +3,8 @@
 #include <stdlib.h>
 
 #define MAX_HEADER_COUNT 64
+#define MAX_PAYLOAD_SIZE 1024*6
+
 
 enum {
     s_start,
@@ -11,6 +13,8 @@ enum {
     s_protocol,
     s_header_key,
     s_header_value,
+    s_headers_done,
+    s_read_body,
     s_done
 };
 
