@@ -51,6 +51,13 @@ void handle(int *clientfd, request_buffer* b) {
         (int)r.field_name_len, r.field_name,
         (int)r.protocol_len, r.protocol
     );
+
+    send(*clientfd, 
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/plain\r\n"
+        "Connection: close\r\n"
+        "Content-Length: 5\r\n\r\n"
+        "read", 88, 0);
 }
 
 void* worker(void* arg) {
