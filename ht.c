@@ -15,20 +15,20 @@ void ht_init(ht* t) {
     t->size = 0;
 }
 
-uint32_t djb2(const char *key) {
+uint32_t djb2(string s) {
     uint32_t hash = 5381;
 
-    for (size_t i = 0; i < strlen(key); ++i) {
-        hash = hash*33 + key[i];
+    for (size_t i = 0; i < s.size; ++i) {
+        hash = hash*33 + s.data[i];
     }
 
     return hash;
 }
 
-void ht_insert(ht* t, char *key, uint64_t value) {
+void ht_insert(ht* t, string key, string value) {
     uint32_t pos = djb2(key)% t->capacity;
 
-    printf("pos: %s => %d\n", key, pos);
+    printf("pos: %.*s => %d\n", (int)key.size, key.data, pos);
 
     t->bucket[pos].value = value;
     t->bucket[pos].occupied = true;
@@ -37,12 +37,12 @@ void ht_insert(ht* t, char *key, uint64_t value) {
     ++t->size;
 }
 
-item* ht_derive(ht* t, const char* key) {
+item* ht_derive(ht* t, string key) {
     uint32_t pos = djb2(key)% t->capacity;
 
     // there is currently no collision handle
-    if (strcmp(t->bucket[pos].key, key) < 0) 
-        return NULL;
+    // if (strcmp(t->bucket[pos].key, key) < 0) 
+    //     return NULL;
         
     return &t->bucket[pos];
 }

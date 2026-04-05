@@ -2,3 +2,4 @@ ht
 *.o
 .github
 .vscode
+ht_test

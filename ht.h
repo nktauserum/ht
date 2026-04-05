@@ -4,9 +4,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "string.h"
+
 typedef struct {
-    char* key;
-    uint64_t value;
+    string key;
+    string value;
     bool occupied;
 } item;
 
@@ -16,6 +18,6 @@ typedef struct {
     size_t size;
 } ht;
 
-void ht_insert(ht*, char*, uint64_t);
-item* ht_derive(ht*, const char*);
+void ht_insert(ht*, string, string);
+item* ht_derive(ht*, string);
 void ht_init(ht*);
