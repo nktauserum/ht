@@ -35,25 +35,14 @@ typedef struct {
     pthread_cond_t cond;
 } incoming_connections_buf;
 
-void handle(int *clientfd, request_buffer* b) {
-    request r = {0};
-    if ((request_read(clientfd, b, &r)) < 0) {
-        perror("request_read");
-        return;
-    }
-
-    send(*clientfd, 
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/plain\r\n"
-        "Connection: close\r\n"
-        "Content-Length: 5\r\n\r\n"
-        "read\n", 89, 0);
-}
-
 void* worker(void* arg) {
     incoming_connections_buf* buf = arg;
-    char* rb_buf = malloc(REQUEST_BUFFER_SIZE * sizeof(char));
+    char* rb_buf = malloc(REQUEST_BUFFER_SIZE);
+    char* wb_buf = malloc(REQUEST_BUFFER_SIZE);
+    char* header_buf = malloc(REQUEST_BUFFER_SIZE);
+
     request_buffer rb = {.buf = rb_buf, .buf_size = REQUEST_BUFFER_SIZE, .total_read = 0};
+    response_buffer wb = {.write_buf = wb_buf, .available_buf_size = REQUEST_BUFFER_SIZE, .content_length = 0};
 
     while (1) {
         pthread_mutex_lock(&buf->mu);
@@ -64,7 +53,57 @@ void* worker(void* arg) {
         --buf->size;
         pthread_mutex_unlock(&buf->mu);
 
-        handle(clientfd, &rb);
+        request r = {0};
+        if ((request_read(clientfd, &rb, &r)) < 0) {
+            perror("request_read");
+            continue;
+        }
+
+        do {
+            if (r.field_name_len <= 1) {
+                memcpy(wb.status_code, "404 Not Found", 14);
+                break;
+            }
+
+            // init the string & also strip the leading /
+            string field_name = string_init(r.field_name+1, r.field_name_len-1);
+
+            if (strncmp(r.method, "GET", r.method_len) == 0) {
+
+                pthread_mutex_lock(&data.mu);
+                item* item = ht_derive(&data.table, field_name);
+                pthread_mutex_unlock(&data.mu);
+
+                memcpy(wb.write_buf, item->value.data, item->value.size);
+                wb.content_length = item->value.size;
+                memcpy(wb.status_code, "200 OK", 7);
+            } else if (strncmp(r.method, "POST", r.method_len) == 0 || strncmp(r.method, "PUT", r.method_len) == 0) {
+                string value = string_init(r.payload, r.payload_len);
+
+                pthread_mutex_lock(&data.mu);
+                ht_insert(&data.table, field_name, value);
+                pthread_mutex_unlock(&data.mu);
+
+                memcpy(wb.status_code, "200 OK", 7);
+
+            } else {
+                memcpy(wb.status_code, "405 Method Not Allowed", 23);
+            }
+            
+        } while (0);
+
+        snprintf(
+            header_buf,
+            REQUEST_BUFFER_SIZE, 
+            "HTTP/1.1 %s\r\n"
+            "Content-Type: text/plain\r\n"
+            "Connection: close\r\n"
+            "Content-Length: %lu\r\n\r\n",
+            wb.status_code, wb.content_length
+        );
+
+        send(*clientfd, header_buf, strlen(header_buf), 0);
+        send(*clientfd, wb.write_buf, wb.content_length, 0);
 
         close(*clientfd);
         free(clientfd);

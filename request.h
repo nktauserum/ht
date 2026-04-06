@@ -33,10 +33,16 @@ typedef struct {
 } request;
 
 typedef struct {
-    char *buf;
+    char* buf;
     size_t buf_size;
     size_t total_read;
 } request_buffer;
+
+typedef struct {
+    char* write_buf;       size_t available_buf_size;
+    char status_code[32];
+    size_t content_length;
+} response_buffer;
 
 
 int request_read(int*, request_buffer*, request*);
