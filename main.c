@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #include "ht.h"
-#include "request.h"
+#include "networking.h"
 
 #define PORT 5000
 #define QUEUE_SIZE 2048
