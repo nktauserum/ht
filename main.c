@@ -103,7 +103,9 @@ void* worker(void* arg) {
         );
 
         send(*clientfd, header_buf, strlen(header_buf), 0);
-        send(*clientfd, wb.write_buf, wb.content_length, 0);
+        if (wb.content_length != 0) {
+            send(*clientfd, wb.write_buf, wb.content_length, 0);
+        }
 
         close(*clientfd);
         free(clientfd);
