@@ -53,16 +53,17 @@ void* worker(void* arg) {
         --buf->size;
         pthread_mutex_unlock(&buf->mu);
 
-        request r = {0};
-        if ((request_read(clientfd, &rb, &r)) < 0) {
-            perror("request_read");
-            continue;
-        }
-
-        // init the string & also strip the leading /
-        string field_name = string_init(r.field_name+1, r.field_name_len-1);
-
         do {
+            request r = {0};
+            if ((request_read(clientfd, &rb, &r)) < 0) {
+                memcpy(wb.status_code, "400 Bad Request", 15);
+                printf("error: request_read");
+                continue;
+            }
+
+            // init the string & also strip the leading /
+            string field_name = string_init(r.field_name+1, r.field_name_len-1);
+
             if (r.field_name_len <= 1) {
                 memcpy(wb.status_code, "404 Not Found", 14);
                 break;
@@ -99,11 +100,10 @@ void* worker(void* arg) {
             } else {
                 memcpy(wb.status_code, "405 Method Not Allowed", 23);
             }
-            
+
+            string_clean(&field_name);
         } while (0);
         
-        string_clean(&field_name);
-
         snprintf(
             header_buf,
             REQUEST_BUFFER_SIZE, 

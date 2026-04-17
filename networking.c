@@ -154,7 +154,10 @@ int request_read(int *clientfd, request_buffer* b, request* r) {
 
             // if payload bytes already exist in the buffer
             if (to_copy < (size_t)content_length) {
-                // dangerous! does not check whether the specified content length is safe for the allocation
+                if (content_length + 1 > MAX_PAYLOAD_SIZE) {
+                    return -1;
+                }
+
                 r->payload = malloc((size_t)content_length + 1);
                 if (!r->payload) {
                     perror("malloc");
