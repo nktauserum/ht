@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "ht.h"
 #include "networking.h"
@@ -224,6 +225,9 @@ int main(void) {
                 while (1) {
                     int* clientfd = (int*)malloc(sizeof(int));
                     if (!clientfd) break;
+
+                    struct timeval tv = { .tv_sec = 10, .tv_usec = 0 };  
+                    setsockopt(*clientfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
                     if ((*clientfd = accept(server.server_fd, NULL, NULL)) < 0) {
                         if (errno != EAGAIN) perror("accept failed");
