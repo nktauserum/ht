@@ -55,9 +55,41 @@ void* worker(void* arg) {
 
         do {
             request r = {0};
-            if ((request_read(clientfd, &rb, &r)) < 0) {
-                memcpy(wb.status_code, "400 Bad Request", 15);
-                printf("error: request_read");
+            int err;
+            if ((err = request_read(clientfd, &rb, &r)) != OK) {
+                printf("ERROR: request_read(): ");
+                switch (err)
+                {
+                case ERR_FULL_BUFFER:
+                    printf("request buffer is full. TODO: make it dynamic.\n");
+                    memcpy(wb.status_code, "413 Content Too Large", 22);
+                    break;
+
+                case ERR_RECV:
+                    printf("recv(): some kind of network error.\n");
+                    memcpy(wb.status_code, "500 Internal Server Error", 26);
+                    break;
+
+                case ERR_READ_NULL:
+                    printf("recv() has read zero bytes.\n");
+                    memcpy(wb.status_code, "400 Bad Request", 16);
+                    break;
+
+                case ERR_BAD_REQUEST:
+                    printf("bad request.\n");
+                    memcpy(wb.status_code, "400 Bad Request", 16);
+                    break;
+
+                case ERR_MALLOC:
+                    printf("malloc()\n");
+                    memcpy(wb.status_code, "413 Content Too Large", 22);
+                    break;
+                
+                default:
+                    printf("unknown error.\n");
+                    break;
+                }
+
                 continue;
             }
 
@@ -85,7 +117,7 @@ void* worker(void* arg) {
                 memcpy(wb.status_code, "200 OK", 7);
             } else if (strncmp(r.method, "POST", r.method_len) == 0 || strncmp(r.method, "PUT", r.method_len) == 0) {
                 if (r.payload_len == 0) {
-                    memcpy(wb.status_code, "400 Bad Request", 15);
+                    memcpy(wb.status_code, "400 Bad Request", 16);
                     break;
                 }
 

@@ -7,6 +7,16 @@
 
 
 enum {
+    OK,
+    ERR_FULL_BUFFER,
+    ERR_RECV,
+    ERR_READ_NULL,
+    ERR_BAD_REQUEST,
+    ERR_MALLOC,
+};
+
+
+enum {
     s_start,
     s_path,
     s_method,

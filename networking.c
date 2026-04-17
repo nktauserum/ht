@@ -10,8 +10,7 @@
 int request_read(int *clientfd, request_buffer* b, request* r) {
     while (1) {
         if (b->total_read >= b->buf_size - 1) {
-            perror("buffer is full");
-            return -1;
+            return ERR_FULL_BUFFER;
         }
 
         ssize_t bytes_read = recv(
@@ -23,15 +22,13 @@ int request_read(int *clientfd, request_buffer* b, request* r) {
         
         if (bytes_read < 0) {
             if (errno == EINTR) continue;
-            if (errno == EAGAIN || errno == EWOULDBLOCK) return -1;
-            perror("recv");
-            return -1;
+            if (errno == EAGAIN || errno == EWOULDBLOCK) return ERR_RECV;
+            return ERR_RECV;
         }
         
         if (bytes_read == 0) {
             if (b->total_read == 0) {
-                perror("read null");
-                return -1;
+                return ERR_READ_NULL;
             }
             break;
         }
@@ -143,8 +140,7 @@ int request_read(int *clientfd, request_buffer* b, request* r) {
         case s_read_body:
             char *hdr = strstr(b->buf, "\r\n\r\n");
             if (!hdr) {
-                perror("no header end");
-                return -1;
+                return ERR_BAD_REQUEST;
             }
 
             // copy existing bytes of body to the payload
@@ -155,13 +151,12 @@ int request_read(int *clientfd, request_buffer* b, request* r) {
             // if payload bytes already exist in the buffer
             if (to_copy < (size_t)content_length) {
                 if (content_length + 1 > MAX_PAYLOAD_SIZE) {
-                    return -1;
+                    return ERR_BAD_REQUEST;
                 }
 
                 r->payload = malloc((size_t)content_length + 1);
                 if (!r->payload) {
-                    perror("malloc");
-                    return -1;
+                    return ERR_MALLOC;
                 }
             } else {
                 r->payload = b->buf + body_offset;
@@ -181,9 +176,8 @@ int request_read(int *clientfd, request_buffer* b, request* r) {
                 if (bytes_read < 0) {
                     if (errno == EINTR) continue;
                     if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-                    perror("recv");
                     free(r->payload);
-                    return -1;
+                    return ERR_RECV;
                 }
                 if (bytes_read == 0) break;
                 copied += (size_t)bytes_read;
