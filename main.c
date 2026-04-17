@@ -71,11 +71,16 @@ void* worker(void* arg) {
             if (strncmp(r.method, "GET", r.method_len) == 0) {
 
                 pthread_mutex_lock(&data.mu);
-                item* item = ht_derive(&data.table, field_name);
+                item* it = ht_derive(&data.table, field_name);
                 pthread_mutex_unlock(&data.mu);
 
-                memcpy(wb.write_buf, item->value.data, item->value.size);
-                wb.content_length = item->value.size;
+                if (!it->occupied) {
+                    memcpy(wb.status_code, "204 No Content", 15);
+                    break;
+                }
+
+                memcpy(wb.write_buf, it->value.data, it->value.size);
+                wb.content_length = it->value.size;
                 memcpy(wb.status_code, "200 OK", 7);
             } else if (strncmp(r.method, "POST", r.method_len) == 0 || strncmp(r.method, "PUT", r.method_len) == 0) {
                 string value = string_init(r.payload, r.payload_len);
