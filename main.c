@@ -59,14 +59,14 @@ void* worker(void* arg) {
             continue;
         }
 
+        // init the string & also strip the leading /
+        string field_name = string_init(r.field_name+1, r.field_name_len-1);
+
         do {
             if (r.field_name_len <= 1) {
                 memcpy(wb.status_code, "404 Not Found", 14);
                 break;
             }
-
-            // init the string & also strip the leading /
-            string field_name = string_init(r.field_name+1, r.field_name_len-1);
 
             if (strncmp(r.method, "GET", r.method_len) == 0) {
 
@@ -83,6 +83,11 @@ void* worker(void* arg) {
                 wb.content_length = it->value.size;
                 memcpy(wb.status_code, "200 OK", 7);
             } else if (strncmp(r.method, "POST", r.method_len) == 0 || strncmp(r.method, "PUT", r.method_len) == 0) {
+                if (r.payload_len == 0) {
+                    memcpy(wb.status_code, "400 Bad Request", 15);
+                    break;
+                }
+
                 string value = string_init(r.payload, r.payload_len);
 
                 pthread_mutex_lock(&data.mu);
@@ -96,6 +101,8 @@ void* worker(void* arg) {
             }
             
         } while (0);
+        
+        string_clean(&field_name);
 
         snprintf(
             header_buf,
