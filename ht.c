@@ -27,14 +27,19 @@ uint32_t djb2(string s) {
 
 void ht_insert(ht* t, string key, string value) {
     uint32_t pos = djb2(key)% t->capacity;
-
+    
     printf("pos: %.*s => %d\n", (int)key.size, key.data, pos);
+    
+    int i = 1;
+    if (t->bucket[pos].occupied) {
+        string_clean(&t->bucket[pos].value);
+        i = 0;
+    }
 
     t->bucket[pos].value = value;
     t->bucket[pos].occupied = true;
     t->bucket[pos].key = key;
-
-    ++t->size;
+    t->size += i;
 }
 
 item* ht_derive(ht* t, string key) {
