@@ -55,4 +55,5 @@ typedef struct {
 } response_buffer;
 
 
-int request_read(int*, request_buffer*, request*);
+int request_read(int*, request_buffer*);
+int request_parse(int*, request_buffer*, request*);

@@ -7,7 +7,7 @@
 
 #include "networking.h"
 
-int request_read(int *clientfd, request_buffer* b, request* r) {
+int request_read(int *clientfd, request_buffer* b) {
     while (1) {
         if (b->total_read >= b->buf_size - 1) {
             return ERR_FULL_BUFFER;
@@ -41,6 +41,11 @@ int request_read(int *clientfd, request_buffer* b, request* r) {
             break;
         }
     }
+
+    return OK;
+}
+
+int request_parse(int *clientfd, request_buffer* b, request* r) {
 
     char *p = b->buf;
     const char *end = b->buf + b->total_read;
@@ -137,7 +142,7 @@ int request_read(int *clientfd, request_buffer* b, request* r) {
             state = s_read_body;
             break;
 
-        case s_read_body:
+        case s_read_body: ;
             char *hdr = strstr(b->buf, "\r\n\r\n");
             if (!hdr) {
                 return ERR_BAD_REQUEST;

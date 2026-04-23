@@ -24,7 +24,7 @@ struct {
 
 struct {
     int port;
-    int server_fd;
+ int server_fd;
     struct sockaddr_in server_addr;
 } server;
 
@@ -57,7 +57,7 @@ void* worker(void* arg) {
         do {
             request r = {0};
             int err;
-            if ((err = request_read(clientfd, &rb, &r)) != OK) {
+            if ((err = request_read(clientfd, &rb)) != OK) {
                 printf("ERROR: request_read(): ");
                 switch (err)
                 {
@@ -66,6 +66,7 @@ void* worker(void* arg) {
                     memcpy(wb.status_code, "413 Content Too Large", 22);
                     break;
 
+                    
                 case ERR_RECV:
                     printf("recv(): some kind of network error.\n");
                     memcpy(wb.status_code, "500 Internal Server Error", 26);
@@ -74,6 +75,18 @@ void* worker(void* arg) {
                 case ERR_READ_NULL:
                     printf("recv() has read zero bytes.\n");
                     memcpy(wb.status_code, "400 Bad Request", 16);
+                    break;
+
+                };
+                continue;
+            }
+
+            if ((err = request_parse(clientfd, &rb, &r)) != OK) {
+                printf("ERROR: request_parse: ");
+                switch (err) {    
+                case ERR_RECV:
+                    printf("recv(): some kind of network error.\n");
+                    memcpy(wb.status_code, "500 Internal Server Error", 26);
                     break;
 
                 case ERR_BAD_REQUEST:
