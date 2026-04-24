@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "string.h"
 
 string string_init(const char *s, size_t len) {
@@ -13,4 +15,8 @@ void string_clean(string *s) {
     if (s->capacity != 0 && s->data) {
         free(s->data);
     }
+}
+
+int string_cmp(string f, string s) {
+    return strncmp(f.data, s.data, f.size) != 0;
 }

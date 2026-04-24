@@ -11,3 +11,4 @@ typedef struct {
 
 string string_init(const char*, size_t);
 void string_clean(string*);
+int string_cmp(string, string);

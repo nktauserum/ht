@@ -26,28 +26,48 @@ uint32_t djb2(string s) {
 }
 
 void ht_insert(ht* t, string key, string value) {
-    uint32_t pos = djb2(key)% t->capacity;
-    
-    printf("pos: %.*s => %d\n", (int)key.size, key.data, pos);
-    
-    int i = 1;
-    if (t->bucket[pos].occupied) {
-        string_clean(&t->bucket[pos].value);
-        i = 0;
-    }
+    uint32_t start = djb2(key)%t->capacity;
 
-    t->bucket[pos].value = value;
-    t->bucket[pos].occupied = true;
-    t->bucket[pos].key = key;
-    t->size += i;
+    for (uint32_t i = 0; i < t->capacity; ++i) {
+        uint32_t pos = start + i;
+
+        // empty slot
+        if (!t->bucket[pos].occupied) {        
+            t->bucket[pos].value = value;
+            t->bucket[pos].occupied = true;
+            t->bucket[pos].key = key;
+            t->size += 1;
+            break;
+        }
+
+        // the same key
+        if (string_cmp(t->bucket[pos].key, key) == 0) { 
+            string_clean(&t->bucket[pos].value);
+            t->bucket[pos].value = value;
+            t->bucket[pos].occupied = true;
+            t->bucket[pos].key = key;
+            break;
+        }
+    }
 }
 
 item* ht_derive(ht* t, string key) {
-    uint32_t pos = djb2(key)% t->capacity;
+    uint32_t start = djb2(key)%t->capacity;
+    uint32_t pos = 0;
 
-    // there is currently no collision handle
-    // if (strcmp(t->bucket[pos].key, key) < 0) 
-    //     return NULL;
-        
+    for (uint32_t i = 0; i < t->capacity; ++i) {
+        pos = start + i;
+
+       // not found
+        if (!t->bucket[pos].occupied) {        
+            return NULL;
+        }
+
+        // the same key
+        if (string_cmp(t->bucket[pos].key, key) == 0) { 
+            break;
+        }
+    }
+
     return &t->bucket[pos];
 }

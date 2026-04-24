@@ -121,7 +121,7 @@ void* worker(void* arg) {
                 item* it = ht_derive(&data.table, field_name);
                 pthread_mutex_unlock(&data.mu);
 
-                if (!it->occupied) {
+                if (!it) {
                     memcpy(wb.status_code, "204 No Content", 15);
                     break;
                 }
