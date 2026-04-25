@@ -12,7 +12,7 @@ string string_init(const char *s, size_t len) {
 }
 
 void string_clean(string *s) {
-    if (s->capacity != 0 && s->data) {
+    if (s->capacity != 0 && s->data != NULL) {
         free(s->data);
     }
 }

@@ -25,7 +25,7 @@ uint32_t djb2(string s) {
     return hash;
 }
 
-void ht_insert(ht* t, string key, string value) {
+void ht_insert(ht* t, string key, string value, int64_t ttl) {
     uint32_t start = djb2(key)%t->capacity;
 
     for (uint32_t i = 0; i < t->capacity; ++i) {
@@ -36,6 +36,7 @@ void ht_insert(ht* t, string key, string value) {
             t->bucket[pos].value = value;
             t->bucket[pos].occupied = true;
             t->bucket[pos].key = key;
+            t->bucket[pos].ttl = ttl;
             t->size += 1;
             break;
         }
@@ -44,6 +45,7 @@ void ht_insert(ht* t, string key, string value) {
         if (string_cmp(t->bucket[pos].key, key) == 0) { 
             string_clean(&t->bucket[pos].value);
             t->bucket[pos].value = value;
+            t->bucket[pos].ttl = ttl;
             break;
         }
     }
@@ -90,3 +92,4 @@ void ht_delete(ht* t, string key) {
         }
     }
 }
+

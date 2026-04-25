@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <pthread.h>
+#include <threads.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
@@ -76,7 +77,6 @@ void* worker(void* arg) {
                     printf("recv() has read zero bytes.\n");
                     memcpy(wb.status_code, "400 Bad Request", 16);
                     break;
-
                 };
                 continue;
             }
@@ -137,8 +137,20 @@ void* worker(void* arg) {
 
                 string value = string_init(r.payload, r.payload_len);
 
+                int64_t ttl = 0;
+                for (size_t i = 0; i < r.headers_count; ++i) {
+                    if (strncmp("TTL", r.headers[i].key, r.headers[i].key_len) == 0) {
+                        int64_t timestamp_s = time(NULL);
+                        ttl = atoll(r.headers[i].value) + timestamp_s;
+                    }
+                }
+
+
+                //debug
+                printf("TTL: %lu\n", ttl);
+
                 pthread_rwlock_wrlock(&data.mu);
-                ht_insert(&data.table, field_name, value);
+                ht_insert(&data.table, field_name, value, ttl);
                 pthread_rwlock_unlock(&data.mu);
 
                 memcpy(wb.status_code, "200 OK", 7);
@@ -159,7 +171,7 @@ void* worker(void* arg) {
             "Content-Length: %lu\r\n\r\n",
             wb.status_code, wb.content_length
         );
-
+ 
         send(*clientfd, header_buf, strlen(header_buf), 0);
         if (wb.content_length != 0) {
             send(*clientfd, wb.write_buf, wb.content_length, 0);
@@ -172,6 +184,42 @@ void* worker(void* arg) {
 
     // actually unnecessary
     free(rb_buf);
+}
+
+void* data_worker(void*) {
+    while (1) {    
+        int64_t current_time = time(NULL);
+        int64_t sleep_time = 5; // sleeping five seconds by default 
+
+        for (size_t i = 0; i < data.table.capacity; ++i) {
+            pthread_rwlock_rdlock(&data.mu); 
+
+            if (data.table.bucket[i].occupied) {
+                if (data.table.bucket[i].ttl < current_time && data.table.bucket[i].ttl != 0) {
+                    // unlock read and lock write
+                    pthread_rwlock_unlock(&data.mu);
+                    pthread_rwlock_wrlock(&data.mu);
+
+                    free(data.table.bucket[i].value.data); 
+                    free(data.table.bucket[i].key.data); 
+
+                    data.table.bucket[i].occupied = false;
+                    data.table.bucket[i].ttl = 0;
+                }
+
+
+                if (data.table.bucket[i].ttl > current_time && data.table.bucket[i].ttl - current_time > sleep_time) sleep_time = data.table.bucket[i].ttl - current_time;
+            }
+
+            pthread_rwlock_unlock(&data.mu);
+        }
+
+        //debug
+        printf("sleep_time: %lus\n", sleep_time);
+
+        struct timespec ts = {.tv_sec = sleep_time};
+        thrd_sleep(&ts, NULL);
+    }
 }
 
 int main(void) {
@@ -220,6 +268,8 @@ int main(void) {
     // initialising the data table
     ht_init(&data.table);
     pthread_rwlock_init(&data.mu, NULL);
+    pthread_t w;
+    pthread_create(&w, NULL, data_worker, NULL);
 
     pthread_t workers[WORKERS_COUNT];
     for (uint8_t i = 0; i < WORKERS_COUNT; ++i) 
