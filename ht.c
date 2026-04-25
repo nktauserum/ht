@@ -71,3 +71,24 @@ item* ht_derive(ht* t, string key) {
 
     return &t->bucket[pos];
 }
+
+void ht_delete(ht* t, string key) {
+    uint32_t start = djb2(key)%t->capacity;
+
+    for (uint32_t i = 0; i < t->capacity; ++i) {
+        uint32_t pos = start + i;
+
+        // empty slot
+        if (!t->bucket[pos].occupied) {        
+            break;
+        }
+
+        // the same key
+        if (string_cmp(t->bucket[pos].key, key) == 0) { 
+            string_clean(&t->bucket[pos].value);
+            string_clean(&t->bucket[pos].key);
+            t->bucket[pos].occupied = false;
+            break;
+        }
+    }
+}
