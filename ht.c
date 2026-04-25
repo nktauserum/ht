@@ -44,8 +44,6 @@ void ht_insert(ht* t, string key, string value) {
         if (string_cmp(t->bucket[pos].key, key) == 0) { 
             string_clean(&t->bucket[pos].value);
             t->bucket[pos].value = value;
-            t->bucket[pos].occupied = true;
-            t->bucket[pos].key = key;
             break;
         }
     }
