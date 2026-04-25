@@ -19,7 +19,7 @@
 
 struct {
     ht table;
-    pthread_mutex_t mu;
+    pthread_rwlock_t mu;
 } data;
 
 struct {
@@ -117,9 +117,9 @@ void* worker(void* arg) {
 
             if (strncmp(r.method, "GET", r.method_len) == 0) {
 
-                pthread_mutex_lock(&data.mu);
+                pthread_rwlock_rdlock(&data.mu);
                 item* it = ht_derive(&data.table, field_name);
-                pthread_mutex_unlock(&data.mu);
+                pthread_rwlock_unlock(&data.mu);
 
                 if (!it) {
                     memcpy(wb.status_code, "204 No Content", 15);
@@ -137,9 +137,9 @@ void* worker(void* arg) {
 
                 string value = string_init(r.payload, r.payload_len);
 
-                pthread_mutex_lock(&data.mu);
+                pthread_rwlock_wrlock(&data.mu);
                 ht_insert(&data.table, field_name, value);
-                pthread_mutex_unlock(&data.mu);
+                pthread_rwlock_unlock(&data.mu);
 
                 memcpy(wb.status_code, "200 OK", 7);
 
@@ -219,7 +219,7 @@ int main(void) {
 
     // initialising the data table
     ht_init(&data.table);
-    pthread_mutex_init(&data.mu, NULL);
+    pthread_rwlock_init(&data.mu, NULL);
 
     pthread_t workers[WORKERS_COUNT];
     for (uint8_t i = 0; i < WORKERS_COUNT; ++i) 
