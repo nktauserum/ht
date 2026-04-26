@@ -28,7 +28,7 @@ uint32_t djb2(string s) {
 void ht_insert(ht* t, string key, string value, int64_t ttl) {
     uint32_t start = djb2(key)%t->capacity;
 
-    for (uint32_t i = 0; i < t->capacity; ++i) {
+    for (uint32_t i = 0; i < t->capacity-start; ++i) {
         uint32_t pos = start + i;
 
         // empty slot
@@ -55,7 +55,7 @@ item* ht_derive(ht* t, string key) {
     uint32_t start = djb2(key)%t->capacity;
     uint32_t pos = 0;
 
-    for (uint32_t i = 0; i < t->capacity; ++i) {
+    for (uint32_t i = 0; i < t->capacity-start; ++i) {
         pos = start + i;
 
        // not found
