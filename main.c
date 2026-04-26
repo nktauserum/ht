@@ -112,6 +112,7 @@ void* worker(void* arg) {
 
             if (r.field_name_len <= 1) {
                 memcpy(wb.status_code, "404 Not Found", 14);
+                string_clean(&field_name);
                 break;
             }
 
@@ -129,6 +130,8 @@ void* worker(void* arg) {
                 memcpy(wb.write_buf, it->value.data, it->value.size);
                 wb.content_length = it->value.size;
                 memcpy(wb.status_code, "200 OK", 7);
+
+                string_clean(&field_name);
             } else if (strncmp(r.method, "POST", r.method_len) == 0 || strncmp(r.method, "PUT", r.method_len) == 0) {
                 if (r.payload_len == 0) {
                     memcpy(wb.status_code, "400 Bad Request", 16);
@@ -145,10 +148,6 @@ void* worker(void* arg) {
                     }
                 }
 
-
-                //debug
-                printf("TTL: %lu\n", ttl);
-
                 pthread_rwlock_wrlock(&data.mu);
                 ht_insert(&data.table, field_name, value, ttl);
                 pthread_rwlock_unlock(&data.mu);
@@ -157,9 +156,9 @@ void* worker(void* arg) {
 
             } else {
                 memcpy(wb.status_code, "405 Method Not Allowed", 23);
-            }
 
-            string_clean(&field_name);
+                string_clean(&field_name);
+            }
         } while (0);
         
         snprintf(
@@ -200,8 +199,8 @@ void* data_worker(void*) {
                     pthread_rwlock_unlock(&data.mu);
                     pthread_rwlock_wrlock(&data.mu);
 
-                    free(data.table.bucket[i].value.data); 
-                    free(data.table.bucket[i].key.data); 
+                    string_clean(&data.table.bucket[i].value); 
+                    string_clean(&data.table.bucket[i].key); 
 
                     data.table.bucket[i].occupied = false;
                     data.table.bucket[i].ttl = 0;
@@ -214,8 +213,6 @@ void* data_worker(void*) {
             pthread_rwlock_unlock(&data.mu);
         }
 
-        //debug
-        printf("sleep_time: %lus\n", sleep_time);
 
         struct timespec ts = {.tv_sec = sleep_time};
         thrd_sleep(&ts, NULL);
