@@ -17,6 +17,17 @@ All buffers are preallocated, there's no dynamic resizing - only compile-time co
 1. Clone this repository.
 2. `make run`
 
+### Interacting
+
+The server listens on port 5000 by default. You can use simple `curl` requests to interact with it.
+
+Read: `curl -X "GET" http://localhost:5000/field`
+
+Write: `curl -X "POST" -d "YOUR DATA" http://localhost:5000/field`
+
+If you want, you can add a TTL to your data by setting the `TTL` HTTP header:
+
+`-H "TTL: %your_time_in_seconds%"`
 
 ## To-do
 
