@@ -1,28 +1,26 @@
 # ht
 
-Буквально хеш-таблица с мьютексом поверх HTTP. Представляет собой учебный проект, предназначенный для лучшего понимания низкоуровневых процессов под слоями абстракции. Использует лишь необходимый минимум зависимостей - stdlib, posix и linux-specific библиотеки. Развитие проекта https://github.com/nktauserum/fastserver.
+[EN](https://github.com/nktauserum/ht) / [RU](https://github.com/nktauserum/ht/blob/main/README_RU.md)
 
-Хеширование выполняется алгоритмом djb2, коллизии решаются способом линейного обхода (опять же, текущая реализация далеко не идеальна). Сервер построен по схеме producer-consumer: главный поток принимает соединения через epoll в неблокирующем режиме и кладёт дескрипторы в кольцевой буфер. Рабочие потоки (pthread) забирают их, парсят HTTP-запрос и дёргают таблицу. За отслеживание протухания записей ответственен отдельный поток. Как полагается, всё это прикрыто RW-мьютексом. Все буферы предвыделены, динамического ресайза и персистентности нет - параметры заданы на этапе компиляции.
+Literally **a hash table & rw-mutex over HTTP**. This is an educational project, created to better understand low-level processes below abstraction levels. So, not perfect. It uses only the necessary dependencies: stdlib, posix threads and linux-specific libraries.
 
-Прочитать из таблицы: `curl -X "GET" http://localhost:5000/field`
+Hashing is performed by the **djb2 algorithm**, collisions are handled with linear probing in the not beautiful way. Server is built according to the scheme producer-consumer: the main thread receives incoming requests from **epoll** in a non-blocking way and puts them into a **ring buffer**.
 
-Записать в таблицу: `curl -X "POST" -d "YOUR DATA" http://localhost:5000/field`
+These requests are distributed between **worker threads** of a configurable count. Requests are parsed by them and interact with hash-table. A separate thread is responsible for tracking the expiration of records. There is a read-write mutex, of course.
 
-При желании можно добавить TTL при создании записи: `-H "TTL: %your_time_in_seconds%"`.
+All buffers are preallocated, there's no dynamic resizing - only compile-time configuration. 
 
-## Что реализовано
+## Building and running
 
-- Работа с системными сокетами и API системы в общем.
-- Многопоточность (thread pool & epoll)
-- Парсинг HTTP-запроса по методу finite-state machine
-- Хеш-таблица c мьютексом
-- Обработка коллизий в хеш-таблице
-- TTL у записей
+*This project has been tested only on Linux.*
 
-## Что хотелось бы реализовать
+1. Clone this repository.
+2. `make run`
 
-- Более чёткие, информативные логи
-- Персистентность при остановке
-- Простейшая авторизация
 
-Сборка и запуск одной командой: `make run`.
+## To-do
+
+- More concize logs
+- Some persistence
+- Basic authorization 
+- SSL
