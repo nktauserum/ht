@@ -8,39 +8,20 @@
 #include "networking.h"
 
 int request_read(int *clientfd, request_buffer* b) {
-    while (1) {
-        if (b->total_read >= b->buf_size - 1) {
-            return ERR_FULL_BUFFER;
-        }
-
-        ssize_t bytes_read = recv(
-                *clientfd, 
-                b->buf + b->total_read, 
-                b->buf_size - b->total_read - 1, 
-                0
-            );
-        
-        if (bytes_read < 0) {
-            if (errno == EINTR) continue;
-            if (errno == EAGAIN || errno == EWOULDBLOCK) return ERR_RECV;
-            return ERR_RECV;
-        }
-        
-        if (bytes_read == 0) {
-            if (b->total_read == 0) {
-                return ERR_READ_NULL;
-            }
-            break;
-        }
-        
-        b->total_read += (size_t)bytes_read;
+    ssize_t bytes_read = recv(
+            *clientfd, 
+            b->buf + b->total_read, 
+            b->buf_size - b->total_read - 1, 
+            0
+        );
     
-        b->buf[b->total_read] = '\0';
-
-        if (strstr(b->buf, "\r\n\r\n")) {
-            break;
-        }
+    if (bytes_read < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) return ERR_RECV;
+        return ERR_RECV;
     }
+    
+    b->total_read = (size_t)bytes_read;
+    b->buf[b->total_read] = '\0';
 
     return OK;
 }
