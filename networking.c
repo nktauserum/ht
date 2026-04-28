@@ -102,7 +102,7 @@ int request_parse(int *clientfd, request_buffer* b, request* r) {
                 r->headers[curr_header].value = start;
                 r->headers[curr_header].value_len = c - start;
                 start = ++c;
-                if (curr_header <= MAX_HEADER_COUNT) ++curr_header;
+                if (curr_header < MAX_HEADER_COUNT) ++curr_header;
                 else state = s_headers_done;
             }
 
@@ -110,8 +110,9 @@ int request_parse(int *clientfd, request_buffer* b, request* r) {
 
         case s_headers_done:
             for (size_t i = 0; i < r->headers_count; ++i) {
-                if (strncmp(r->headers[i].key, "Content-Length", r->headers[i].key_len) == 0) {
+                if (r->headers[i].key_len == 14 && strncmp(r->headers[i].key, "Content-Length", r->headers[i].key_len) == 0) {
                     content_length = strtoll(r->headers[i].value, NULL, 10);
+                    if (content_length < 0) content_length = 0;
                 }
             }
 
@@ -149,7 +150,7 @@ int request_parse(int *clientfd, request_buffer* b, request* r) {
             }
             
 
-            if (to_copy > 0) {
+            if (to_copy > 0 && r->payload != b->buf + body_offset) {
                 memcpy(r->payload, b->buf + body_offset, to_copy);
             }
 
