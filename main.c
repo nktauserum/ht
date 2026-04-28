@@ -17,6 +17,7 @@
 #define QUEUE_SIZE 2048
 #define WORKERS_COUNT 32
 #define REQUEST_BUFFER_SIZE 1024*6
+#define CHECK_SLEEP_TIME 5
 
 struct {
     ht table;
@@ -186,18 +187,26 @@ void* worker(void* arg) {
 }
 
 void* data_worker(void*) {
-    while (1) {    
-        int64_t current_time = time(NULL);
-        int64_t sleep_time = 5; // sleeping five seconds by default 
-
+    while (1) { 
         for (size_t i = 0; i < data.table.capacity; ++i) {
-            pthread_rwlock_rdlock(&data.mu); 
+            pthread_rwlock_rdlock(&data.mu);
+
+            bool expired = false;
 
             if (data.table.bucket[i].occupied) {
-                if (data.table.bucket[i].ttl < current_time && data.table.bucket[i].ttl != 0) {
-                    // unlock read and lock write
-                    pthread_rwlock_unlock(&data.mu);
-                    pthread_rwlock_wrlock(&data.mu);
+                uint64_t ttl = data.table.bucket[i].ttl;
+                expired = (ttl != 0 && ttl < (uint64_t)time(NULL));
+            } 
+
+            pthread_rwlock_unlock(&data.mu);
+
+            if (expired) {
+                pthread_rwlock_wrlock(&data.mu);
+    
+                uint64_t ttl = data.table.bucket[i].ttl;
+                if (data.table.bucket[i].occupied &&
+                    ttl != 0 && 
+                    ttl < (uint64_t)time(NULL)) {
 
                     string_clean(&data.table.bucket[i].value); 
                     string_clean(&data.table.bucket[i].key); 
@@ -205,16 +214,12 @@ void* data_worker(void*) {
                     data.table.bucket[i].occupied = false;
                     data.table.bucket[i].ttl = 0;
                 }
-
-
-                if (data.table.bucket[i].ttl > current_time && data.table.bucket[i].ttl - current_time > sleep_time) sleep_time = data.table.bucket[i].ttl - current_time;
+                pthread_rwlock_unlock(&data.mu);
             }
-
-            pthread_rwlock_unlock(&data.mu);
         }
 
 
-        struct timespec ts = {.tv_sec = sleep_time};
+        struct timespec ts = {.tv_sec = CHECK_SLEEP_TIME};
         thrd_sleep(&ts, NULL);
     }
 }
